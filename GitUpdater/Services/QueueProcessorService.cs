@@ -83,7 +83,7 @@ public class QueueProcessorService : BackgroundService
         using var activity = ActivitySource.StartActivity("ProcessQueue", ActivityKind.Consumer);
         activity?.SetTag("repo.url", repoUrl);
 
-        _logger.LogInformation("Starting queue processor for {RepoUrl}", repoUrl);
+        _logger.LogInformation($@"Starting queue processor for {repoUrl}");
 
         string? localPath = null;
 
@@ -95,7 +95,7 @@ public class QueueProcessorService : BackgroundService
 
                 if (queueValue == null)
                 {
-                    _logger.LogInformation("Queue empty for {RepoUrl}, cleaning up", repoUrl);
+                    _logger.LogInformation($@"Queue empty for {repoUrl}, cleaning up");
                     await _queueService.DeleteQueueAsync(repoUrl);
                     break;
                 }
@@ -155,11 +155,11 @@ public class QueueProcessorService : BackgroundService
                 try
                 {
                     Directory.Delete(localPath, recursive: true);
-                    _logger.LogInformation("Cleaned up local path {LocalPath}", localPath);
+                    _logger.LogInformation($@"Cleaned up local path {localPath}");
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to clean up local path {LocalPath}", localPath);
+                    _logger.LogWarning(ex, $@"Failed to clean up local path {localPath}");
                 }
             }
         }
