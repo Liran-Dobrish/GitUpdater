@@ -1,4 +1,5 @@
 using GitUpdater.GitProviders;
+using GitUpdater.Health;
 using GitUpdater.Services;
 using OpenTelemetry.Trace;
 using Serilog;
@@ -45,6 +46,10 @@ public class Program
             // Register queue services
             builder.Services.AddSingleton<RedisQueueService>();
             builder.Services.AddHostedService<QueueProcessorService>();
+
+            // Health check for Redis connectivity
+            builder.Services.AddHealthChecks()
+                .AddCheck<RedisHealthCheck>("redis", tags: ["ready"]);
 
             // Add OpenTelemetry tracing for Redis and queue processor
             builder.Services.AddOpenTelemetry()
