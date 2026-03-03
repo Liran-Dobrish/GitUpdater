@@ -10,6 +10,39 @@ public class RedisQueueService
     private readonly ILogger<RedisQueueService> _logger;
     private const string QueueKeyPrefix = "gitupdater:queue:";
 
+    // Lua: append a QueueValue to the Values list, set Status to New if currently not InProgress
+    private const string EnqueueScript = @"
+        local data = redis.call('GET', KEYS[1])
+        local obj
+        if data then
+            obj = cjson.decode(data)
+        else
+            obj = { Values = {}, Status = 0 }
+        end
+        local newItem = cjson.decode(ARGV[1])
+        table.insert(obj.Values, newItem)
+        if obj.Status ~= 1 then
+            obj.Status = 0
+        end
+        redis.call('SET', KEYS[1], cjson.encode(obj))
+        return 1";
+
+    // Lua: if Status is not InProgress, set it to InProgress and return the full JSON; otherwise return nil
+    private const string TryClaimScript = @"
+        local data = redis.call('GET', KEYS[1])
+        if not data then return nil end
+        local obj = cjson.decode(data)
+        if obj.Status == 1 then return nil end
+        if #obj.Values == 0 then return nil end
+        obj.Status = 1
+        redis.call('SET', KEYS[1], cjson.encode(obj))
+        return data";
+
+    // Lua: set Status to Done and clear Values; delete the key
+    private const string CompleteScript = @"
+        redis.call('DEL', KEYS[1])
+        return 1";
+
     public RedisQueueService(IConnectionMultiplexer redis, ILogger<RedisQueueService> logger)
     {
         _redis = redis;
@@ -24,35 +57,37 @@ public class RedisQueueService
         var key = GetQueueKey(repoUrl);
         var json = JsonSerializer.Serialize(value);
 
-        await db.ListRightPushAsync(key, json);
+        await db.ScriptEvaluateAsync(EnqueueScript, new RedisKey[] { key }, new RedisValue[] { json });
         _logger.LogInformation("Enqueued request {RequestId} for repo {RepoUrl}", value.RequestId, repoUrl);
     }
 
-    public async Task<QueueValue?> DequeueAsync(string repoUrl)
+    /// <summary>
+    /// Atomically claims a repo queue for processing if its status is not InProgress.
+    /// Returns the QueueValues snapshot to process, or null if already claimed by another instance.
+    /// </summary>
+    public async Task<QueueValues?> TryClaimAsync(string repoUrl)
     {
         var db = _redis.GetDatabase();
         var key = GetQueueKey(repoUrl);
-        var value = await db.ListLeftPopAsync(key);
 
-        if (value.IsNullOrEmpty)
+        var result = await db.ScriptEvaluateAsync(TryClaimScript, new RedisKey[] { key });
+
+        if (result.IsNull)
             return null;
 
-        return JsonSerializer.Deserialize<QueueValue>(value!);
+        return JsonSerializer.Deserialize<QueueValues>(result.ToString()!);
     }
 
-    public async Task<long> GetQueueLengthAsync(string repoUrl)
+    /// <summary>
+    /// Marks a repo queue as complete and removes it from Redis.
+    /// </summary>
+    public async Task CompleteAsync(string repoUrl)
     {
         var db = _redis.GetDatabase();
         var key = GetQueueKey(repoUrl);
-        return await db.ListLengthAsync(key);
-    }
 
-    public async Task DeleteQueueAsync(string repoUrl)
-    {
-        var db = _redis.GetDatabase();
-        var key = GetQueueKey(repoUrl);
-        await db.KeyDeleteAsync(key);
-        _logger.LogInformation("Deleted queue for repo {RepoUrl}", repoUrl);
+        await db.ScriptEvaluateAsync(CompleteScript, new RedisKey[] { key });
+        _logger.LogInformation("Completed and removed queue for repo {RepoUrl}", repoUrl);
     }
 
     public async Task<List<string>> GetAllQueueKeysAsync()

@@ -80,23 +80,27 @@ public class QueueProcessorService : BackgroundService
 
     private async Task ProcessQueueAsync(string repoUrl, CancellationToken cancellationToken)
     {
+        // Atomically try to claim this repo's queue - if Status is already InProgress, skip
+        var queueValues = await _queueService.TryClaimAsync(repoUrl);
+        if (queueValues == null)
+        {
+            _logger.LogDebug($@"Queue for {repoUrl} is already being processed, skipping");
+            return;
+        }
+
         using var activity = ActivitySource.StartActivity("ProcessQueue", ActivityKind.Consumer);
         activity?.SetTag("repo.url", repoUrl);
 
-        _logger.LogInformation($@"Starting queue processor for {repoUrl}");
+        _logger.LogInformation($@"Starting queue processor for {repoUrl} with {queueValues.Values.Count} items");
 
         string? localPath = null;
 
         try
         {
-            while (!cancellationToken.IsCancellationRequested)
+            foreach (var queueValue in queueValues.Values)
             {
-                var queueValue = await _queueService.DequeueAsync(repoUrl);
-
-                if (queueValue == null)
+                if (cancellationToken.IsCancellationRequested)
                 {
-                    _logger.LogInformation($@"Queue empty for {repoUrl}, cleaning up");
-                    await _queueService.DeleteQueueAsync(repoUrl);
                     break;
                 }
 
@@ -149,6 +153,9 @@ public class QueueProcessorService : BackgroundService
         }
         finally
         {
+            // Always remove the queue from Redis when done, regardless of success or failure
+            await _queueService.CompleteAsync(repoUrl);
+
             // Cleanup local clone
             if (localPath != null && Directory.Exists(localPath))
             {
