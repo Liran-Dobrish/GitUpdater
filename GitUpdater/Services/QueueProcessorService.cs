@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using GitUpdater.GitProviders;
+using Microsoft.Extensions.Configuration;
 
 namespace GitUpdater.Services;
 
@@ -12,16 +13,19 @@ public class QueueProcessorService : BackgroundService
     private readonly ConcurrentDictionary<string, Task> _activeProcessors = new();
     private static readonly ActivitySource ActivitySource = new("GitUpdater.QueueProcessor");
 
-    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(5);
+    private readonly TimeSpan _pollInterval;
 
     public QueueProcessorService(
         RedisQueueService queueService,
         GitProviderFactory gitProviderFactory,
-        ILogger<QueueProcessorService> logger)
+        ILogger<QueueProcessorService> logger,
+        IConfiguration configuration)
     {
         _queueService = queueService;
         _gitProviderFactory = gitProviderFactory;
         _logger = logger;
+        _pollInterval = TimeSpan.FromSeconds(
+            configuration.GetValue<int>("QueueProcessor:PollIntervalSeconds", 5));
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -38,9 +42,11 @@ public class QueueProcessorService : BackgroundService
                 {
                     var repoUrl = RedisQueueService.ExtractRepoUrl(key);
 
-                    await _activeProcessors.AddOrUpdate(
+                    _activeProcessors.AddOrUpdate(
                         repoUrl,
+                        // add
                         url => Task.Run(() => ProcessQueueAsync(url, stoppingToken), stoppingToken),
+                        // update
                         (url, existingTask) =>
                         {
                             if (existingTask.IsCompleted)
@@ -65,7 +71,7 @@ public class QueueProcessorService : BackgroundService
                 _logger.LogError(ex, "Error during queue polling");
             }
 
-            await Task.Delay(PollInterval, stoppingToken);
+            await Task.Delay(_pollInterval, stoppingToken);
         }
 
         _logger.LogInformation("Queue processor service stopping, waiting for active processors...");

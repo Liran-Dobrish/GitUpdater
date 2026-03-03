@@ -3,6 +3,7 @@ using GitUpdater.Services;
 using OpenTelemetry.Trace;
 using Serilog;
 using StackExchange.Redis;
+using Microsoft.Extensions.Configuration;
 
 namespace GitUpdater;
 
@@ -11,12 +12,10 @@ public class Program
     public static void Main(string[] args)
     {
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
-            .Enrich.FromLogContext()
-            .WriteTo.Console()
-            .WriteTo.File("logs/gitupdater-.log",
-                rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 30)
+            .ReadFrom.Configuration(new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true, reloadOnChange: true)
+                .Build())
             .CreateLogger();
 
         try
