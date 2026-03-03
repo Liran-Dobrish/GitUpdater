@@ -38,7 +38,7 @@ public class QueueProcessorService : BackgroundService
                 {
                     var repoUrl = RedisQueueService.ExtractRepoUrl(key);
 
-                    _activeProcessors.AddOrUpdate(
+                    await _activeProcessors.AddOrUpdate(
                         repoUrl,
                         url => Task.Run(() => ProcessQueueAsync(url, stoppingToken), stoppingToken),
                         (url, existingTask) =>
