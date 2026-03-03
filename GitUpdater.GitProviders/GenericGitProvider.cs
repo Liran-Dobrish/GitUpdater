@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using GitUpdater.DM;
+using Microsoft.Extensions.Logging;
 
 namespace GitUpdater.GitProviders;
 

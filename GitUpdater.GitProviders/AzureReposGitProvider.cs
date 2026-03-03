@@ -1,4 +1,5 @@
 using GitUpdater.DM;
+using Microsoft.Extensions.Logging;
 
 namespace GitUpdater.GitProviders;
 

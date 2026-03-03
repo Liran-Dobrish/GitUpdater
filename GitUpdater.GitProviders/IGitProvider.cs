@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace GitUpdater.GitProviders;
 
 public interface IGitProvider
