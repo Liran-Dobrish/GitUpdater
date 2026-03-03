@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GitUpdater.ServiceDefaults"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GitUpdater.GitProviders", "GitUpdater.GitProviders\GitUpdater.GitProviders.csproj", "{91D564C8-09E9-4B3A-8267-816C21DBE065}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GitUpdater.Tests", "GitUpdater.Tests\GitUpdater.Tests.csproj", "{552A83DE-290C-4FD1-9BDC-EB878F808DB8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,18 @@ Global
 		{91D564C8-09E9-4B3A-8267-816C21DBE065}.Release|x64.Build.0 = Release|Any CPU
 		{91D564C8-09E9-4B3A-8267-816C21DBE065}.Release|x86.ActiveCfg = Release|Any CPU
 		{91D564C8-09E9-4B3A-8267-816C21DBE065}.Release|x86.Build.0 = Release|Any CPU
+		{552A83DE-290C-4FD1-9BDC-EB878F808DB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{552A83DE-290C-4FD1-9BDC-EB878F808DB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{552A83DE-290C-4FD1-9BDC-EB878F808DB8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{552A83DE-290C-4FD1-9BDC-EB878F808DB8}.Debug|x64.Build.0 = Debug|Any CPU
+		{552A83DE-290C-4FD1-9BDC-EB878F808DB8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{552A83DE-290C-4FD1-9BDC-EB878F808DB8}.Debug|x86.Build.0 = Debug|Any CPU
+		{552A83DE-290C-4FD1-9BDC-EB878F808DB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{552A83DE-290C-4FD1-9BDC-EB878F808DB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{552A83DE-290C-4FD1-9BDC-EB878F808DB8}.Release|x64.ActiveCfg = Release|Any CPU
+		{552A83DE-290C-4FD1-9BDC-EB878F808DB8}.Release|x64.Build.0 = Release|Any CPU
+		{552A83DE-290C-4FD1-9BDC-EB878F808DB8}.Release|x86.ActiveCfg = Release|Any CPU
+		{552A83DE-290C-4FD1-9BDC-EB878F808DB8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
