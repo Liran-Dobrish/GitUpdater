@@ -25,7 +25,7 @@ public class GitUpdateController : ControllerBase
         var queueValue = new QueueValue
         {
             RequestId = requestId,
-            RepoUrl = request.RepoUrl,
+            RepoUrl = request.RepoUrl.ToLower(),
             Token = request.Token,
             RepoType = request.Type,
             Updates = request.Updates
